@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_fund_allocation_tree" model="ir.ui.view">
+        <field name="name">fund.allocation.tree</field>
+        <field name="model">fund.allocation</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Allocations">
+                <field name="name"/>
+                <field name="request_date"/>
+                <field name="fund_account_id"/>
+                <field name="project_id"/>
+                <field name="expense_head_id"/>
+                <field name="amount" sum="Total Allocated"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="requested_by"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'approved'" 
+                       decoration-info="state in ('submitted', 'gm_approved')"
+                       decoration-warning="state == 'draft'"
+                       decoration-danger="state in ('rejected', 'cancelled')"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fund_allocation_form" model="ir.ui.view">
+        <field name="name">fund.allocation.form</field>
+        <field name="model">fund.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Fund Allocation Request">
+                <header>
+                    <button name="action_submit" string="Submit" type="object" class="oe_highlight" 
+                            invisible="state != 'draft'"/>
+                    
+                    <button name="action_gm_approve" string="GM Approve" type="object" class="oe_highlight" 
+                            invisible="state != 'submitted'" groups="nn_fund_management.group_gm_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_md_approve" string="MD Approve" type="object" class="oe_highlight" 
+                            invisible="state != 'gm_approved'" groups="nn_fund_management.group_md_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <!-- Rejection requires comments, let's keep it simple by calling action_reject or we can do it via a wizard.
+                         In Odoo form, calling button directly will prompt if we add validation, but since comment is a field or we can just pass it, 
+                         let's allow clicking Reject and if comment is empty we raise error, OR we can show a prompt. 
+                         Let's put a simple button that calls the method. -->
+                    <button name="action_reject" string="Reject" type="object" class="btn-danger" 
+                            invisible="state not in ('submitted', 'gm_approved')" groups="nn_fund_management.group_gm_approver,nn_fund_management.group_md_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_cancel" string="Cancel" type="object" 
+                            invisible="state not in ('draft', 'submitted', 'gm_approved', 'approved')"/>
+                            
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,gm_approved,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fund_account_id" options="{'no_create': True}" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="project_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select project OR expense head..."/>
+                            <field name="expense_head_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select project OR expense head..."/>
+                        </group>
+                        <group>
+                            <field name="request_date" readonly="state != 'draft'"/>
+                            <field name="requested_by"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="purpose" placeholder="Provide allocation purpose..." readonly="state != 'draft'"/>
+                        <field name="attachment_ids" widget="many2many_binary" string="Supporting Documents" readonly="state != 'draft'"/>
+                    </group>
+                    <notebook>
+                        <tab string="Approval Audit Log" name="audit_log">
+                            <field name="approval_history_ids" readonly="True">
+                                <tree>
+                                    <field name="action_date"/>
+                                    <field name="user_id"/>
+                                    <field name="action" widget="badge" 
+                                           decoration-success="action == 'approve'"
+                                           decoration-info="action == 'submit'"
+                                           decoration-danger="action == 'reject'"
+                                           decoration-warning="action == 'cancel'"/>
+                                    <field name="level"/>
+                                    <field name="comment"/>
+                                </tree>
+                            </field>
+                        </tab>
+                    </notebook>
+                </sheet>
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_fund_allocation_search" model="ir.ui.view">
+        <field name="name">fund.allocation.search</field>
+        <field name="model">fund.allocation</field>
+        <field name="arch" type="xml">
+            <search string="Search Allocations">
+                <field name="name" string="Allocation Number" filter_domain="[('name', 'ilike', self)]"/>
+                <field name="fund_account_id"/>
+                <field name="project_id"/>
+                <field name="expense_head_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Pending GM" name="pending_gm" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Pending MD" name="pending_md" domain="[('state', '=', 'gm_approved')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Fund Account" name="group_account" context="{'group_by': 'fund_account_id'}"/>
+                    <filter string="Project" name="group_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Expense Head" name="group_expense_head" context="{'group_by': 'expense_head_id'}"/>
+                    <filter string="Status" name="group_status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_fund_allocation" model="ir.actions.act_window">
+        <field name="name">Allocation Requests</field>
+        <field name="res_model">fund.allocation</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_allocation_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Request a new fund allocation!
+            </p>
+            <p>
+                Allocate incoming funds from fund accounts to projects or expense heads.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_fund_allocation_operations"
+              name="Fund Allocations"
+              parent="menu_fund_operations"
+              action="action_fund_allocation"
+              sequence="20"/>
+</odoo>

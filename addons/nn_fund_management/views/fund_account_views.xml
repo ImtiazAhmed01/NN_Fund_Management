@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_fund_account_tree" model="ir.ui.view">
+        <field name="name">fund.account.tree</field>
+        <field name="model">fund.account</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Accounts" decoration-info="available_unassigned_balance &gt; 0">
+                <field name="name"/>
+                <field name="account_number"/>
+                <field name="total_received" sum="Total Received"/>
+                <field name="total_assigned" sum="Total Assigned"/>
+                <field name="amount_held" sum="Amount Held"/>
+                <field name="available_unassigned_balance" sum="Total Available Unassigned"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fund_account_form" model="ir.ui.view">
+        <field name="name">fund.account.form</field>
+        <field name="model">fund.account</field>
+        <field name="arch" type="xml">
+            <form string="Fund Account">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Prime Bank - Main Account"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group id="basic_info">
+                            <field name="account_number" placeholder="e.g. 1029384756"/>
+                            <field name="currency_id"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
+                        <group id="balances" string="Account Balances Summary">
+                            <field name="total_received" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="total_assigned" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="amount_held" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="available_unassigned_balance" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <tab string="Incoming Funds History" name="incoming_funds">
+                            <field name="incoming_fund_ids" readonly="True">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="reference"/>
+                                    <field name="sender"/>
+                                    <field name="amount"/>
+                                    <field name="status" widget="badge" decoration-success="status == 'confirmed'" decoration-warning="status == 'draft'"/>
+                                </tree>
+                            </field>
+                        </tab>
+                        <tab string="Allocations" name="allocations">
+                            <field name="allocation_ids" readonly="True">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="request_date"/>
+                                    <field name="project_id"/>
+                                    <field name="expense_head_id"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge" 
+                                           decoration-success="state == 'approved'" 
+                                           decoration-info="state in ('submitted', 'gm_approved')"
+                                           decoration-warning="state == 'draft'"
+                                           decoration-danger="state == 'rejected'"/>
+                                </tree>
+                            </field>
+                        </tab>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_fund_account_search" model="ir.ui.view">
+        <field name="name">fund.account.search</field>
+        <field name="model">fund.account</field>
+        <field name="arch" type="xml">
+            <search string="Search Fund Accounts">
+                <field name="name" string="Account Name/Number" filter_domain="['|', ('name', 'ilike', self), ('account_number', 'ilike', self)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_fund_account" model="ir.actions.act_window">
+        <field name="name">Fund Accounts</field>
+        <field name="res_model">fund.account</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_account_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Fund Account!
+            </p>
+            <p>
+                Configure cash, bank, or other financial accounts to track received funds.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_fund_account_config"
+              name="Fund Accounts"
+              parent="menu_fund_config"
+              action="action_fund_account"
+              sequence="10"/>
+</odoo>

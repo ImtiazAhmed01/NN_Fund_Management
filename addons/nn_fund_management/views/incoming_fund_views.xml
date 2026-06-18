@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_incoming_fund_tree" model="ir.ui.view">
+        <field name="name">incoming.fund.tree</field>
+        <field name="model">incoming.fund</field>
+        <field name="arch" type="xml">
+            <tree string="Incoming Funds" decoration-success="status == 'confirmed'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="fund_account_id"/>
+                <field name="reference"/>
+                <field name="sender"/>
+                <field name="amount" sum="Total Incoming"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="status" widget="badge" decoration-success="status == 'confirmed'" decoration-warning="status == 'draft'"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_incoming_fund_form" model="ir.ui.view">
+        <field name="name">incoming.fund.form</field>
+        <field name="model">incoming.fund</field>
+        <field name="arch" type="xml">
+            <form string="Incoming Fund">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" class="oe_highlight" 
+                            invisible="status != 'draft'" groups="nn_fund_management.group_finance_user,nn_fund_management.group_fund_admin"/>
+                    <field name="status" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fund_account_id" options="{'no_create': True}" readonly="status == 'confirmed'"/>
+                            <field name="amount" readonly="status == 'confirmed'"/>
+                            <field name="date" readonly="status == 'confirmed'"/>
+                        </group>
+                        <group>
+                            <field name="reference" readonly="status == 'confirmed'"/>
+                            <field name="sender" readonly="status == 'confirmed'"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" readonly="status == 'confirmed'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description" placeholder="Internal remarks..." readonly="status == 'confirmed'"/>
+                        <field name="attachment_ids" widget="many2many_binary" string="Transaction Attachments" readonly="status == 'confirmed'"/>
+                    </group>
+                </sheet>
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_incoming_fund_search" model="ir.ui.view">
+        <field name="name">incoming.fund.search</field>
+        <field name="model">incoming.fund</field>
+        <field name="arch" type="xml">
+            <search string="Search Incoming Funds">
+                <field name="name" string="Code or Ref" filter_domain="['|', ('name', 'ilike', self), ('reference', 'ilike', self)]"/>
+                <field name="fund_account_id"/>
+                <field name="sender"/>
+                <filter string="Draft" name="draft" domain="[('status', '=', 'draft')]"/>
+                <filter string="Confirmed" name="confirmed" domain="[('status', '=', 'confirmed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Fund Account" name="group_account" context="{'group_by': 'fund_account_id'}"/>
+                    <filter string="Source / Sender" name="group_sender" context="{'group_by': 'sender'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_incoming_fund" model="ir.actions.act_window">
+        <field name="name">Incoming Funds</field>
+        <field name="res_model">incoming.fund</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_incoming_fund_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record an incoming fund!
+            </p>
+            <p>
+                Track money received in your fund accounts from investors, clients, or other sources.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_incoming_fund_operations"
+              name="Incoming Funds"
+              parent="menu_fund_operations"
+              action="action_incoming_fund"
+              sequence="10"/>
+</odoo>

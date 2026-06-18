@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_fund_requisition_tree" model="ir.ui.view">
+        <field name="name">fund.requisition.tree</field>
+        <field name="model">fund.requisition</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Requisitions">
+                <field name="name"/>
+                <field name="request_date"/>
+                <field name="required_date"/>
+                <field name="project_id"/>
+                <field name="expense_head_id"/>
+                <field name="amount" sum="Total Requested"/>
+                <field name="spent_amount" sum="Total Spent"/>
+                <field name="remaining_billable_amount" sum="Total Remaining Billable"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="requested_by"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'approved'" 
+                       decoration-info="state in ('submitted', 'gm_approved')"
+                       decoration-warning="state == 'draft'"
+                       decoration-muted="state == 'closed'"
+                       decoration-danger="state in ('rejected', 'cancelled')"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fund_requisition_form" model="ir.ui.view">
+        <field name="name">fund.requisition.form</field>
+        <field name="model">fund.requisition</field>
+        <field name="arch" type="xml">
+            <form string="Fund Requisition">
+                <header>
+                    <button name="action_submit" string="Submit" type="object" class="oe_highlight" 
+                            invisible="state != 'draft'"/>
+                    
+                    <button name="action_gm_approve" string="GM Approve" type="object" class="oe_highlight" 
+                            invisible="state != 'submitted'" groups="nn_fund_management.group_gm_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_md_approve" string="MD Approve" type="object" class="oe_highlight" 
+                            invisible="state != 'gm_approved'" groups="nn_fund_management.group_md_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_reject" string="Reject" type="object" class="btn-danger" 
+                            invisible="state not in ('submitted', 'gm_approved')" groups="nn_fund_management.group_gm_approver,nn_fund_management.group_md_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_cancel" string="Cancel" type="object" 
+                            invisible="state not in ('draft', 'submitted', 'gm_approved', 'approved')"/>
+                            
+                    <button name="action_close" string="Close Requisition" type="object" class="oe_highlight"
+                            invisible="state != 'approved'" help="Close requisition and release any remaining unspent funds back to project/expense head balance."/>
+                            
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,gm_approved,approved,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="project_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select project OR expense head..."/>
+                            <field name="expense_head_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select project OR expense head..."/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="request_date" readonly="state != 'draft'"/>
+                            <field name="required_date" readonly="state != 'draft'"/>
+                            <field name="requested_by"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="Billing Tracking" invisible="state not in ('approved', 'closed')">
+                        <group>
+                            <field name="spent_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="remaining_billable_amount" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_subtotal_footer_separator"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="purpose" placeholder="Provide requisition purpose..." readonly="state != 'draft'"/>
+                        <field name="attachment_ids" widget="many2many_binary" string="Supporting Documents" readonly="state != 'draft'"/>
+                    </group>
+                    <notebook>
+                        <tab string="Vendor Bills" name="vendor_bills">
+                            <field name="bill_ids" readonly="True">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="vendor"/>
+                                    <field name="ref"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge" 
+                                           decoration-success="state == 'posted'" 
+                                           decoration-warning="state == 'draft'"
+                                           decoration-danger="state == 'cancelled'"/>
+                                </tree>
+                            </field>
+                        </tab>
+                        <tab string="Approval Audit Log" name="audit_log">
+                            <field name="approval_history_ids" readonly="True">
+                                <tree>
+                                    <field name="action_date"/>
+                                    <field name="user_id"/>
+                                    <field name="action" widget="badge" 
+                                           decoration-success="action == 'approve'"
+                                           decoration-info="action == 'submit'"
+                                           decoration-danger="action == 'reject'"
+                                           decoration-warning="action == 'cancel'"/>
+                                    <field name="level"/>
+                                    <field name="comment"/>
+                                </tree>
+                            </field>
+                        </tab>
+                    </notebook>
+                </sheet>
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_fund_requisition_search" model="ir.ui.view">
+        <field name="name">fund.requisition.search</field>
+        <field name="model">fund.requisition</field>
+        <field name="arch" type="xml">
+            <search string="Search Requisitions">
+                <field name="name" string="Requisition Number" filter_domain="[('name', 'ilike', self)]"/>
+                <field name="project_id"/>
+                <field name="expense_head_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Pending GM" name="pending_gm" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Pending MD" name="pending_md" domain="[('state', '=', 'gm_approved')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Closed" name="closed" domain="[('state', '=', 'closed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Project" name="group_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Expense Head" name="group_expense_head" context="{'group_by': 'expense_head_id'}"/>
+                    <filter string="Status" name="group_status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_fund_requisition" model="ir.actions.act_window">
+        <field name="name">Fund Requisitions</field>
+        <field name="res_model">fund.requisition</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_requisition_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Request a new fund requisition!
+            </p>
+            <p>
+                Request funds from a project or expense head's available balance.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_fund_requisition_operations"
+              name="Fund Requisitions"
+              parent="menu_fund_operations"
+              action="action_fund_requisition"
+              sequence="30"/>
+</odoo>

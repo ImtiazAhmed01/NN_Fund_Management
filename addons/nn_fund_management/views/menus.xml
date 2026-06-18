@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_fund_root"
+              name="Fund Management"
+              sequence="10"/>
+
+    <!-- Operations Menu -->
+    <menuitem id="menu_fund_operations"
+              name="Operations"
+              parent="menu_fund_root"
+              sequence="10"/>
+
+    <!-- Configurations / Master Data Menu -->
+    <menuitem id="menu_fund_config"
+              name="Configuration"
+              parent="menu_fund_root"
+              sequence="20"/>
+</odoo>

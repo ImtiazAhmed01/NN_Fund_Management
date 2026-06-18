@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_fund_transfer_tree" model="ir.ui.view">
+        <field name="name">fund.transfer.tree</field>
+        <field name="model">fund.transfer</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Transfers">
+                <field name="name"/>
+                <field name="request_date"/>
+                <field name="src_project_id"/>
+                <field name="src_expense_head_id"/>
+                <field name="dest_project_id"/>
+                <field name="dest_expense_head_id"/>
+                <field name="amount" sum="Total Transferred"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="requested_by"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'approved'" 
+                       decoration-info="state in ('submitted', 'gm_approved')"
+                       decoration-warning="state == 'draft'"
+                       decoration-danger="state in ('rejected', 'cancelled')"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fund_transfer_form" model="ir.ui.view">
+        <field name="name">fund.transfer.form</field>
+        <field name="model">fund.transfer</field>
+        <field name="arch" type="xml">
+            <form string="Fund Transfer Request">
+                <header>
+                    <button name="action_submit" string="Submit" type="object" class="oe_highlight" 
+                            invisible="state != 'draft'"/>
+                    
+                    <button name="action_gm_approve" string="GM Approve" type="object" class="oe_highlight" 
+                            invisible="state != 'submitted'" groups="nn_fund_management.group_gm_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_md_approve" string="MD Approve" type="object" class="oe_highlight" 
+                            invisible="state != 'gm_approved'" groups="nn_fund_management.group_md_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_reject" string="Reject" type="object" class="btn-danger" 
+                            invisible="state not in ('submitted', 'gm_approved')" groups="nn_fund_management.group_gm_approver,nn_fund_management.group_md_approver,nn_fund_management.group_fund_admin"/>
+                    
+                    <button name="action_cancel" string="Cancel" type="object" 
+                            invisible="state not in ('draft', 'submitted', 'gm_approved', 'approved')"/>
+                            
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,gm_approved,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Source (From)">
+                            <field name="src_project_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select source project..."/>
+                            <field name="src_expense_head_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select source expense head..."/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Destination (To)">
+                            <field name="dest_project_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select destination project..."/>
+                            <field name="dest_expense_head_id" options="{'no_create': True}" readonly="state != 'draft'" placeholder="Select destination expense head..."/>
+                            <field name="currency_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Request Information">
+                            <field name="request_date" readonly="state != 'draft'"/>
+                            <field name="requested_by"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" placeholder="Provide transfer reasoning..." readonly="state != 'draft'"/>
+                    </group>
+                    <notebook>
+                        <tab string="Approval Audit Log" name="audit_log">
+                            <field name="approval_history_ids" readonly="True">
+                                <tree>
+                                    <field name="action_date"/>
+                                    <field name="user_id"/>
+                                    <field name="action" widget="badge" 
+                                           decoration-success="action == 'approve'"
+                                           decoration-info="action == 'submit'"
+                                           decoration-danger="action == 'reject'"
+                                           decoration-warning="action == 'cancel'"/>
+                                    <field name="level"/>
+                                    <field name="comment"/>
+                                </tree>
+                            </field>
+                        </tab>
+                    </notebook>
+                </sheet>
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_fund_transfer_search" model="ir.ui.view">
+        <field name="name">fund.transfer.search</field>
+        <field name="model">fund.transfer</field>
+        <field name="arch" type="xml">
+            <search string="Search Transfers">
+                <field name="name" string="Transfer Number" filter_domain="[('name', 'ilike', self)]"/>
+                <field name="src_project_id"/>
+                <field name="dest_project_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Pending GM" name="pending_gm" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Pending MD" name="pending_md" domain="[('state', '=', 'gm_approved')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Source Project" name="group_src_proj" context="{'group_by': 'src_project_id'}"/>
+                    <filter string="Destination Project" name="group_dest_proj" context="{'group_by': 'dest_project_id'}"/>
+                    <filter string="Status" name="group_status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_fund_transfer" model="ir.actions.act_window">
+        <field name="name">Transfer Requests</field>
+        <field name="res_model">fund.transfer</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_transfer_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Request a new fund transfer!
+            </p>
+            <p>
+                Transfer funds between projects and expense heads securely with multi-level approval tracking.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_fund_transfer_operations"
+              name="Fund Transfers"
+              parent="menu_fund_operations"
+              action="action_fund_transfer"
+              sequence="40"/>
+</odoo>

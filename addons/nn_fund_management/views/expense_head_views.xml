@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_fund_expense_head_tree" model="ir.ui.view">
+        <field name="name">fund.expense.head.tree</field>
+        <field name="model">fund.expense.head</field>
+        <field name="arch" type="xml">
+            <tree string="Expense Heads" decoration-info="available_fund &gt; 0">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="total_allocated" sum="Total Allocated"/>
+                <field name="incoming_transfers" sum="Total Incoming Transfers" optional="hide"/>
+                <field name="outgoing_transfers" sum="Total Outgoing Transfers" optional="hide"/>
+                <field name="requisition_hold" sum="Total Requisition Hold"/>
+                <field name="transfer_hold" sum="Total Transfer Hold" optional="hide"/>
+                <field name="approved_unspent" sum="Total Approved Unspent"/>
+                <field name="total_spent_amount" sum="Total Spent"/>
+                <field name="available_fund" sum="Total Available"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fund_expense_head_form" model="ir.ui.view">
+        <field name="name">fund.expense.head.form</field>
+        <field name="model">fund.expense.head</field>
+        <field name="arch" type="xml">
+            <form string="Expense Head">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Office Rent"/>
+                        </h1>
+                        <label for="code" class="oe_edit_only"/>
+                        <h3>
+                            <field name="code" placeholder="e.g. EXP-RENT"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group id="basic_info">
+                            <field name="currency_id"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
+                        <group id="balances_summary" string="Expense Head Funds Summary">
+                            <field name="total_allocated"/>
+                            <field name="incoming_transfers"/>
+                            <field name="outgoing_transfers"/>
+                            <field name="transfer_hold"/>
+                            <field name="requisition_hold"/>
+                            <field name="approved_unspent"/>
+                            <field name="total_spent_amount"/>
+                            <field name="available_fund" class="oe_subtotal_footer_separator"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <tab string="Allocations" name="allocations">
+                            <field name="allocation_ids" readonly="True">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="fund_account_id"/>
+                                    <field name="request_date"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge" 
+                                           decoration-success="state == 'approved'" 
+                                           decoration-info="state in ('submitted', 'gm_approved')"
+                                           decoration-warning="state == 'draft'"
+                                           decoration-danger="state == 'rejected'"/>
+                                </tree>
+                            </field>
+                        </tab>
+                        <tab string="Requisitions" name="requisitions">
+                            <field name="requisition_ids" readonly="True">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="request_date"/>
+                                    <field name="required_date"/>
+                                    <field name="amount"/>
+                                    <field name="spent_amount"/>
+                                    <field name="remaining_billable_amount"/>
+                                    <field name="state" widget="badge" 
+                                           decoration-success="state == 'approved'" 
+                                           decoration-info="state in ('submitted', 'gm_approved')"
+                                           decoration-warning="state == 'draft'"
+                                           decoration-muted="state == 'closed'"
+                                           decoration-danger="state == 'rejected'"/>
+                                </tree>
+                            </field>
+                        </tab>
+                        <tab string="Transfers" name="transfers">
+                            <group>
+                                <group string="Incoming Transfers">
+                                    <field name="incoming_transfer_ids" nolabel="1" readonly="True">
+                                        <tree>
+                                            <field name="name"/>
+                                            <field name="src_project_id"/>
+                                            <field name="src_expense_head_id"/>
+                                            <field name="amount"/>
+                                            <field name="state" widget="badge" decoration-success="state == 'approved'"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                                <group string="Outgoing Transfers">
+                                    <field name="outgoing_transfer_ids" nolabel="1" readonly="True">
+                                        <tree>
+                                            <field name="name"/>
+                                            <field name="dest_project_id"/>
+                                            <field name="dest_expense_head_id"/>
+                                            <field name="amount"/>
+                                            <field name="state" widget="badge" 
+                                                   decoration-success="state == 'approved'" 
+                                                   decoration-info="state in ('submitted', 'gm_approved')"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                            </group>
+                        </tab>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_fund_expense_head_search" model="ir.ui.view">
+        <field name="name">fund.expense.head.search</field>
+        <field name="model">fund.expense.head</field>
+        <field name="arch" type="xml">
+            <search string="Search Expense Heads">
+                <field name="name" string="Expense Head Name/Code" filter_domain="['|', ('name', 'ilike', self), ('code', 'ilike', self)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_fund_expense_head" model="ir.actions.act_window">
+        <field name="name">Expense Heads</field>
+        <field name="res_model">fund.expense.head</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_expense_head_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Expense Head!
+            </p>
+            <p>
+                Manage office rent, utilities, salaries, and other expense category fund balances dynamically.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_fund_expense_head_config"
+              name="Expense Heads"
+              parent="menu_fund_config"
+              action="action_fund_expense_head"
+              sequence="30"/>
+</odoo>

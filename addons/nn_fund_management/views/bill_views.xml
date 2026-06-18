@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_fund_bill_tree" model="ir.ui.view">
+        <field name="name">fund.bill.tree</field>
+        <field name="model">fund.bill</field>
+        <field name="arch" type="xml">
+            <tree string="Bills" decoration-success="state == 'posted'" decoration-danger="state == 'cancelled'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="requisition_id"/>
+                <field name="project_id"/>
+                <field name="expense_head_id"/>
+                <field name="vendor"/>
+                <field name="ref"/>
+                <field name="amount" sum="Total Billed"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'posted'" 
+                       decoration-warning="state == 'draft'"
+                       decoration-danger="state == 'cancelled'"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_fund_bill_form" model="ir.ui.view">
+        <field name="name">fund.bill.form</field>
+        <field name="model">fund.bill</field>
+        <field name="arch" type="xml">
+            <form string="Bill">
+                <header>
+                    <button name="action_post" string="Post" type="object" class="oe_highlight" 
+                            invisible="state != 'draft'"/>
+                    
+                    <button name="action_cancel" string="Cancel Bill" type="object" 
+                            invisible="state not in ('draft', 'posted')"
+                            confirm="Are you sure you want to cancel/reverse this bill? This will return the billed amount to the requisition's remaining balance."/>
+                            
+                    <field name="state" widget="statusbar" statusbar_visible="draft,posted,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="requisition_id" options="{'no_create': True}" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="project_id"/>
+                            <field name="expense_head_id"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="vendor" readonly="state != 'draft'" placeholder="e.g. Acme Supplies Ltd"/>
+                            <field name="ref" readonly="state != 'draft'" placeholder="e.g. INV-10023"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                </sheet>
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_fund_bill_search" model="ir.ui.view">
+        <field name="name">fund.bill.search</field>
+        <field name="model">fund.bill</field>
+        <field name="arch" type="xml">
+            <search string="Search Bills">
+                <field name="name" string="Bill Number or Vendor Ref" filter_domain="['|', ('name', 'ilike', self), ('ref', 'ilike', self)]"/>
+                <field name="requisition_id"/>
+                <field name="vendor"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Posted" name="posted" domain="[('state', '=', 'posted')]"/>
+                <filter string="Cancelled" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Requisition" name="group_requisition" context="{'group_by': 'requisition_id'}"/>
+                    <filter string="Vendor" name="group_vendor" context="{'group_by': 'vendor'}"/>
+                    <filter string="Status" name="group_status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_fund_bill" model="ir.actions.act_window">
+        <field name="name">Bills</field>
+        <field name="res_model">fund.bill</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_bill_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record a new Bill!
+            </p>
+            <p>
+                Bills must be linked to an approved fund requisition and cannot exceed its remaining billable amount.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_fund_bill_operations"
+              name="Bills"
+              parent="menu_fund_operations"
+              action="action_fund_bill"
+              sequence="50"/>
+</odoo>

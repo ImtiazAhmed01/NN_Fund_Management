@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Multi-Company Rules -->
+        <record id="fund_account_comp_rule" model="ir.rule">
+            <field name="name">Fund Account Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_account"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="incoming_fund_comp_rule" model="ir.rule">
+            <field name="name">Incoming Fund Multi-Company Rule</field>
+            <field name="model_id" ref="model_incoming_fund"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="fund_project_comp_rule" model="ir.rule">
+            <field name="name">Fund Project Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_project"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="fund_expense_head_comp_rule" model="ir.rule">
+            <field name="name">Fund Expense Head Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_expense_head"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="fund_allocation_comp_rule" model="ir.rule">
+            <field name="name">Fund Allocation Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_allocation"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="fund_requisition_comp_rule" model="ir.rule">
+            <field name="name">Fund Requisition Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_requisition"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="fund_transfer_comp_rule" model="ir.rule">
+            <field name="name">Fund Transfer Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_transfer"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="fund_bill_comp_rule" model="ir.rule">
+            <field name="name">Fund Bill Multi-Company Rule</field>
+            <field name="model_id" ref="model_fund_bill"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+    </data>
+</odoo>
